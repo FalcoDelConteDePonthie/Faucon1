@@ -1,0 +1,245 @@
+# Metodo che legge un csv e restituisce quanto letto in uscita
+#   Parametri:
+#      nomeFile - Nome del file da leggere
+#      separatore - Separatore da usare per leggere i dati nel file
+def leggiCsv(nomeFile,separatore):
+    file = pd.read_csv(nomeFile,separatore)
+    return file.values.tolist()
+
+def calcolaCentroidiRandom(dati):
+    centroidi = []
+    app = []
+    i = 0
+    # Poichè può capitare che prendendo elementi random viene preso due volte
+    # il medesimo data-point ho gestito il caso con un while, che genera k centroidi
+    # casuali selezionandoli in modo randomico dalla lista dati estrapolata dal file
+    # csv di riferimento
+    while i < int(k):
+        # Calcolo l'indice randomico per prendere un punto dal dataset
+        pos = (int(0) + (random() * (int(n) - int(0))))
+        # Estrae il data point
+        app = dati[int(pos)]
+       
+        try:
+            # Il metodo index restituisce l'indice se lo trova nel vettore altrimenti
+            # da eccezione, se da eccezione allora il data point è corretto
+            # altrimenti lo ricalcolo
+           idx = centroidi.index(app)
+        except ValueError:
+           # Se non esiste allora incremento i e lo metto in centroidi
+           i = i+1
+           centroidi.append(app)
+    
+    
+    return centroidi   
+
+# Metodo che assegna i data point al centroide più vicino per la prima fase.
+# Non viene richiamato durante il processo di ricalcolo dei centroidi, perchè 
+# il nuovo centroide viene calcolato facendo la media aritmetica degli attributi
+# pertanto si troverà al centro (come posizione) della nuvola di punti che gli 
+# più vicini. Quelli che erano + lontani tendono ad avvicinare
+# il loro centroide, quindi non ha senso ricalcolare il tutto altre volte
+def assegnaXnearCentroid(A,C,dati):
+    distanzaMin = 9999999999999
+    indice = -1
+    # Ciclo sui data point
+    for i in range(0,n):
+        # Se non è un outlier
+        if(A[i][k]!=1):
+            val = 0
+            distanzaMin = 9999999999999
+            indice = -1
+            
+            # Ciclo tutti i centroidi
+            for j in range(0, k):
+                # Calcolo la distanza euclidea al quadrato per il data point dai centroidi
+                val = pow(LA.norm(np.array(dati[i]) - np.array(C[j]),2),2)
+            
+                # Memorizzo l'indice del centroide più vicino al data point
+                if distanzaMin > val :
+                    indice = j
+                    distanzaMin = val
+            # Sbianco la riga rimettendola a 0 e setto a 1 la posizione dove la distanza è minima        
+            for l in range(0,k):
+                A[i][l] = 0
+            A[i][indice] =  1  
+    # Infine ritorno la matrice aggiornata
+    return A
+
+# Metodo che riceve in ingresso U,U^(S),Z^(S) e calcola la norma euclidea 
+# tra dati e centroidi impostando su U^(S) il valore 1 alla colonna di outlier
+# la dove la distanza minima calcolata per quel data point è maggiore di D.
+# La funzione ritorna la matrice U aggiornata(V)
+def getMinimizeQ(B,C,dati):
+    # Prima calcolo D che è il parametro di confronto per determinare gli outlier
+    D = getD(B,C,dati)
+
+    # Scorro i dati e calcolo la norma euclidea L^2 e ne faccio il quadrato
+    # salvando tutte le distanze nella matrice matr
+    for i in range(0,n):
+        minima = 99999999999999999
+        for l in range(0,k):
+            app = pow(LA.norm(np.array(dati[i]) - np.array(C[l]),2),2)
+            if minima > app:
+                minima = app
+        appol[i][0] = minima        
+        if minima > D:
+           for j in range(0,k+1):
+               B[i][j] = 0
+           B[i][k] = 1           
+    
+    # Restituisco U^(s+1) aggiornata secondo il TEO 1
+    return B
+
+
+# Metodo che calcola la variabile D per determinare quali dei data point sono
+# outlier e quali no
+def getD(A,B,dati):
+    numeroOutlier = contaOutlier(A)
+    coff = gamma/(n-numeroOutlier)
+    somma = 0
+    #Ciclo sugli outlier
+    for l in range(0,k):
+        # Mi ritornano gli indici con valore 1 sulla colonna l della matrice 
+        # binaria A in relazione al centroide corrente, su tt le righe
+        Elementi = np.argwhere(A[:, [l]] == 1)
+        # Ciclo sono quelle righe che hanno valore a 1 e che quindi hanno 
+        # distanza minima dal centroide corrente (migliora le performance)
+        for idx in Elementi:                
+            #Sommo i valori così calcolati  
+            somma = somma + pow(LA.norm(np.array(dati[idx[0]]) - np.array(B[l]),2),2)
+    
+    # Ritono in uscita il valore della variabile D    
+    return coff * somma
+
+
+# Conta quanti 1 ci sono nella colonna k-esima di A
+def contaOutlier(A):
+    return np.sum(A, axis=0)[k]
+
+# Metodo che ricalcola i centroidi
+def getMinimeQcentroi(A,C,dati):
+    sommaFattr = []
+    #print(C)
+    # Per ogni centroide
+    for l in range(0,k):
+        #print("L:"+str(l))
+        # Sommo per colonne tutte le righe in questo modo risparmio sulle performance
+        # e ottengo il numero di data point per centroide
+        cnt = np.sum(A, axis=0)
+       
+        # Cerca su app gli indici dove la matrice ha 1 con colonna l
+        Elementi = np.argwhere(A[:, [l]] == 1)
+
+        # Per ogni attributo  
+        somma = np.array(np.zeros((1,d)))
+        # Per ogni elemento a 1 sulla colonna del centroide (gli altri tanto 
+        # vanno a 0 per il prodotto con A[idx[0]][l]) 
+        for idx in Elementi:          
+            #le coordinate di A sono [idx[0]][l]     
+            somma = somma + dati[idx[0]]
+        #print("somma:"+ str(somma))
+        #print("cnt: "+str(cnt[l]))
+        # Se il centroide ha almeno un punto vicino immetto i nuovi valori calcolati
+        # altrimenti riscrivo il centroide già presente in quanto essendo che non ci sono
+        # punti a ui vicini ovviamente non viene mai calcolato e devo evitare 
+        # lo 0/0
+        if cnt[l] == 0:
+            sommaFattr.append(C[l])
+            #print("QUI"+str(C[l].value))
+        else:    
+            sommaFattr.append(somma/cnt[l])
+            #print("QUA"+str(sommaFattr))
+            
+        # inserisco il centroide nel vettore
+    #centr.append(sommaFattr)
+    # Restituisco i centroidi ricalcolati
+    return sommaFattr  
+
+# Metodo che calcola la variabile P per determinare il criterio di uscita
+def getP(A, B,dati):
+    somma = 0
+    # Calcolo la variabile D che identifica la distanza media calcolata secondo
+    # la logica dell'algoritmo KMOR
+    D = getD(A,B,dati)
+    # Ciclo le righe del dataset
+    value2 = np.sum(A[:][k])
+    value2 = value2 * D
+    for l in range(0,k):
+        Elementi = np.argwhere(A[:, [l]] == 1)
+        for idx in Elementi: 
+            somma = somma + pow(LA.norm(np.array(dati[idx[0]]) - np.array(B[l]),2),2)     
+    
+    # Ritorno in uscita il valore della variabile P calcolata
+    return somma + value2
+
+import numpy as np
+import pandas as pd
+import pylab as pl
+from numpy import linalg as LA
+from random import random
+
+#k = numero desiderato di cluster
+k=3
+sigma = pow(10,-6)
+gamma = 9
+numeroOutlier = 0
+nMax =100
+#dati = leggiCsv("shuttle.csv","\t")
+dati = leggiCsv("shuttle.csv","\t")
+n = np.shape(dati)[0]
+appol = np.zeros((int(n),1))
+d = np.shape(dati)[1]
+no = 0.1*float(n)
+TOT = 0
+for w in range(0,1):
+    # Calcolo k centroidi random
+    Z = calcolaCentroidiRandom(dati)
+    U = np.zeros((int(n),int(k)+1))
+    # Assegno i data point al loro centroide aggiornando U
+    U = assegnaXnearCentroid(U,Z,dati)
+    #for i in range(0,n):
+    #   print(str(U[i][:]) + " " + str(dati[i]))
+    #print("----------------------")
+    S = 0
+    P = 0
+    while 1:
+        #Update U(s+1) by minimizing Q(U,U^(s),Z(s)) according to Theorem 1
+        # In pratica passo U,V,Z e i data point, la funzione calcola D e lo confronta
+        # con il quadrato della minima distanza euclidea di ogni data point e centroide.
+        # Se tale distanza è maggiore di D allora il data point è marchiato come 
+        # outlier
+        U = getMinimizeQ(U,Z,dati)
+        #for i in range(0,n):
+        #    print(str(U[i][:]) + " " + str(dati[i]) + "  "+ str(appol[i][0]))
+        #print("----------------------")
+        S = 0
+        #print("---"+str(Z))
+        #print("---")
+        #for i in range(0,n):
+        #    print(str(U[i][:]) + " " + str(dati[i]))
+        #Ricalcolo il centroide in base al numero di data point che gli sono 
+        # vicini escludendo gli outlier
+        Z = getMinimeQcentroi(U,Z,dati)
+        
+        S=S+1
+        app = P
+        # Calcolo P per verificare se non ci sono state variazioni nello step,
+        # ovvero se i centroidi sono ormai stabili e quindi tra la P precedente
+        # e l'attuale la differenza è < di sigma
+        P = getP(U,Z,dati)
+        #print("lllll-"+str(P))
+        numeroOutlier = contaOutlier(U)
+             
+        if abs(P-app) < sigma or S > nMax:
+            print("Numero fin Outl:"+str(numeroOutlier))
+            print(Z)
+            print("________________________________________")
+            #for i in range(0,n):
+            #    print(str(U[i][:]) + " " + str(dati[i]) + "  "+ str(appol[i][0]))
+            TOT = TOT + numeroOutlier
+            break
+        if numeroOutlier > no:
+            print("Il numero di outlier supera la soglia massima di outlier accettata")
+            break
+print(TOT/100)
