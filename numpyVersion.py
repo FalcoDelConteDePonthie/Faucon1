@@ -136,10 +136,7 @@ for i in range(0,1):
     Z = []
     Z = np.array(Z, dtype="float64")
     Z =  calcolaCentroidiRandom(data)
-    '''Z = [[0.282828283, 0.487570736, 0.4921875, 0.50701506, 0.387820513, 0.51280246, 0.503267974, 0.614767255, 0.575562701],
-         [0.101010101, 0.486661277, 0.4296875, 0.50701506, 0.362179487, 0.513247119, 0.568627451, 0.62600321, 0.572347267],
-         [0.101010101, 0.487166532, 0.4609375, 0.50701506, 0.346153846, 0.513284174, 0.594771242, 0.650080257, 0.585209003]]
-    '''
+
     print(Z)
     lstCluster = []
     for i in range(0,Numclust+1):
@@ -172,11 +169,10 @@ for i in range(0,1):
         print(len(lstCluster[-1]))
     from sklearn.decomposition import PCA
     import pylab as pl
-    print(Z)
+    for i in range(0,Numclust):        
+        dataframeNorm.loc[len(dataframeNorm)] = Z[i]
+        CM = np.append(CM,9)
     X = dataframeNorm.iloc[:, 0:9].values
-    print(X)
-    print(Z[0])
-    X = np.append(X,Z[0])
     y = CM
     pca = PCA(n_components=2).fit(X)
     pca_2d = pca.transform(X)
@@ -197,32 +193,3 @@ for i in range(0,1):
     pl.legend([c1, c2, c3, c4, c5], ['Cluster0','Cluster1','Cluster2','Outlier','Centroide'])
     pl.title('Classificazione outlier con tre centroidi Shuttle normalizzato')
     pl.show()    
-        
-
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-print("##########OUTLIER############")
-print(len(lstCluster[-1]))
-print("##########BUONI############")
-print(len(lstCluster[0]))
-print("####")
-'''
-print(len(lstCluster[1]))
-print("####")
-print(len(lstCluster[2]))
-print("####")
-#print(TOT/100)
-'''
